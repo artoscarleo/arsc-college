@@ -865,24 +865,6 @@ td strong { color: var(--navy); }
    newsletter, land acknowledgment, resources index, 404.
    ========================================================================= */
 
-/* ------------------------------------------------------------ utility bar --
-   Competitors all put a phone number above the nav. It is the cheapest trust
-   signal there is: it says a human exists. */
-.utility {
-  background: var(--navy-deep);
-  border-bottom: 1px solid var(--navy-line);
-  font-size: 11.5px; font-weight: 600; letter-spacing: 0.1em;
-}
-.utility .shell {
-  display: flex; flex-wrap: wrap; align-items: center;
-  justify-content: space-between; gap: 4px var(--sp-md);
-}
-.utility a, .utility span { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; }
-.utility a { text-decoration: none; transition: color 0.3s var(--ease); }
-.utility a:hover { color: var(--gold); }
-.utility-set { display: flex; flex-wrap: wrap; gap: var(--sp-md); align-items: center; }
-.utility svg { flex: none; opacity: 0.8; }
-
 /* --------------------------------------------------------------- faculty -- */
 
 .people { display: grid; gap: 0; border-top: 1px solid rgba(11,27,63,.14); }
@@ -912,31 +894,6 @@ td strong { color: var(--navy); }
 .person.is-vacant { border-style: dashed; opacity: 0.75; }
 .person.is-vacant .person-seal { border-style: dashed; color: var(--ink-soft); }
 
-/* ---------------------------------------------------------- testimonials --
-   Component is built and deliberately empty. Nothing here is fabricated:
-   real quotes go in when real students exist. */
-.quotes { display: grid; gap: var(--sp-md); }
-@media (min-width: 900px) { .quotes { grid-template-columns: repeat(3, 1fr); } }
-
-.quote {
-  display: flex; flex-direction: column; position: relative;
-  background: rgba(251, 249, 245, 0.05);
-  border: 1px solid var(--navy-line);
-  padding: var(--sp-xl) var(--sp-md) var(--sp-md);
-}
-.quote::before {
-  content: "\201C"; position: absolute; top: 2px; left: 16px;
-  font-family: var(--display); font-size: 4.4rem; line-height: 1;
-  color: rgba(229, 200, 124, 0.32);
-}
-.quote blockquote {
-  margin: 0 0 var(--sp-md); font-family: var(--display);
-  font-size: 1.15rem; line-height: 1.5; color: var(--cream); flex: 1;
-}
-.quote figcaption { font-size: 13.5px; border-top: 1px solid var(--navy-line); padding-top: 14px; }
-.quote figcaption strong { color: var(--cream); display: block; }
-.quote.is-vacant { border-style: dashed; }
-.quote.is-vacant blockquote { color: var(--dim); font-style: italic; }
 
 /* ------------------------------------------------------------ tools band -- */
 
