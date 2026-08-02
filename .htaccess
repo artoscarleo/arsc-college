@@ -1,0 +1,39 @@
+# ============================================================================
+# ARSC — Apache configuration for PHP-stack hosting (Cloudways/DigitalOcean).
+#
+# This file is only read by Apache. GitHub Pages ignores it entirely, so the
+# same repository deploys correctly to both.
+# ============================================================================
+
+# Serve index.html first. A PHP stack defaults to index.php, and the host's
+# leftover welcome page would otherwise win at the site root.
+DirectoryIndex index.html index.php
+
+# Use the site's own 404 page rather than the bare Apache one.
+ErrorDocument 404 /404.html
+
+# Don't expose directory contents when a folder has no index file.
+Options -Indexes
+
+<IfModule mod_headers.c>
+  # The site loads no third-party scripts and sets no cookies, so these cost
+  # nothing and close off the common injection and clickjacking routes.
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Fingerprinted assets are safe to cache hard; HTML must stay fresh so
+  # content edits appear immediately after a deploy.
+  <FilesMatch "\.(css|js|jpg|jpeg|png|gif|svg|webp|woff2?)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml \
+                                application/javascript application/json \
+                                image/svg+xml
+</IfModule>
