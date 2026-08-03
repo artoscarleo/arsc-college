@@ -26,7 +26,7 @@
 <meta property="og:image:alt" content="Academy of Research and Sciences of Canada Inc. crest">
 <meta name="twitter:card" content="summary_large_image">
 
-<link rel="preload" as="image" href="assets/arsc-logo-128.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="assets/arsc-logo-128.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
@@ -189,6 +189,20 @@
 <main id="main">
 
 <section class="hero">
+
+  <!-- Responsive: a phone downloads 60 KB, not the 181 KB desktop frame.
+       fetchpriority=high because this is the Largest Contentful Paint
+       element — the one image that must not be lazy. -->
+  <div class="hero-photo" aria-hidden="true">
+    <img src="assets/hero-1376.jpg"
+         srcset="assets/hero-640.jpg 640w,
+                 assets/hero-1000.jpg 1000w,
+                 assets/hero-1376.jpg 1376w"
+         sizes="100vw"
+         width="1376" height="768"
+         alt="" decoding="async" fetchpriority="high">
+  </div>
+
   <div class="rings" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
   <div class="shell">
     <div class="hero-grid">
