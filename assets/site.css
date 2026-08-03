@@ -156,7 +156,7 @@ h4 { font-size: 1.1rem; }
 .prose { max-width: 72ch; }
 .prose h3 { margin: var(--sp-xl) 0 var(--sp-sm); }
 .prose h3 + p { margin-top: var(--sp-xs); }
-.prose h4, .prose h3.label { margin: var(--sp-lg) 0 var(--sp-xs); font-family: var(--body); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-deep); }
+.prose h4 { margin: var(--sp-lg) 0 var(--sp-xs); font-family: var(--body); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-deep); }
 .prose p + p { margin-top: var(--sp-md); }
 .prose ul, .prose ol { margin: var(--sp-md) 0; padding-left: 1.3em; }
 .prose li { margin-bottom: 9px; }
@@ -375,8 +375,10 @@ h4 { font-size: 1.1rem; }
 
 .hero .shell { position: relative; z-index: 1; }
 .hero-grid { display: grid; gap: var(--sp-2xl); }
+/* Single column now the facts panel is gone. The measure is capped so the
+   headline still breaks where it should instead of running the full width. */
 @media (min-width: 1040px) {
-  .hero-grid { grid-template-columns: 1.35fr 0.85fr; align-items: center; gap: var(--sp-3xl); }
+  .hero-grid { grid-template-columns: minmax(0, 62ch); }
 }
 .hero h1 { margin-bottom: var(--sp-lg); }
 .hero .lede { margin-bottom: var(--sp-xl); }
@@ -412,41 +414,7 @@ h4 { font-size: 1.1rem; }
 
 /* --- hero fact panel --- */
 
-.facts { border-top: 1px solid var(--navy-line); }
-
-/* Over the photograph the facts panel landed at 2.18:1 — the right of the
-   frame is a bright window. Legibility can't depend on what the photo
-   happens to show, so the panel carries its own ground. At 0.9 alpha the
-   body text measures ~5.4:1. */
-.hero .facts {
-  background: rgba(7, 19, 49, 0.9);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
-  /* One hairline instead of a full box: the panel reads as a quiet plane
-     rather than a bordered widget, which keeps the hero uncluttered. */
-  border: 0; border-top: 2px solid var(--gold);
-  padding: var(--sp-lg) var(--sp-lg) var(--sp-xl);
-}
 @media (max-width: 560px) {
-  .hero .facts { padding: var(--sp-xs) var(--sp-md) var(--sp-md); }
-}
-.facts-label {
-  font-size: 12.5px; font-weight: 700; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--gold); padding-block: 0 var(--sp-md);
-}
-.fact {
-  display: flex; align-items: baseline; gap: var(--sp-lg);
-  padding-block: var(--sp-md); border-top: 1px solid rgba(27, 46, 92, 0.85);
-}
-.fact-num {
-  font-family: var(--display); font-size: 2.3rem; font-weight: 500;
-  color: var(--cream); line-height: 1; font-variant-numeric: tabular-nums;
-  flex: none; min-width: 4.2ch;
-}
-.fact-txt { font-size: 15.5px; line-height: 1.5; }
-.facts-note {
-  margin-top: var(--sp-lg); font-family: var(--display); font-style: italic;
-  font-size: 1.22rem; line-height: 1.4; color: var(--gold);
 }
 
 /* -------------------------------------------------------------- ticker -- */
@@ -928,7 +896,6 @@ td strong { color: var(--navy); }
   /* Long course titles must not force a horizontal scroll. */
   h1, h2, h3 { overflow-wrap: break-word; }
 
-  .facts-note { font-size: 1.12rem; }
   .split { min-height: 92px; grid-template-columns: 1fr 44px 1fr; }
   .split div { font-size: 10px; letter-spacing: 0.14em; }
 }
@@ -1016,7 +983,6 @@ img, svg, video, iframe { max-width: 100%; }
 /* Empty-state slot: a real placeholder, not an invented person. */
 .person.is-vacant { border-style: dashed; opacity: 0.75; }
 .person.is-vacant .person-seal { border-style: dashed; color: var(--ink-soft); }
-
 
 /* ------------------------------------------------------------ tools band -- */
 

@@ -814,13 +814,6 @@ def page_home():
         </div>
       </div>
 
-      <aside class="facts" data-reveal="right" style="--d:330ms" aria-labelledby="facts-label">
-        <p class="facts-label" id="facts-label">The signal is clear</p>
-        <div class="fact"><span class="fact-num">AI</span><span class="fact-txt">is already here</span></div>
-        <div class="fact"><span class="fact-num" data-count-to="12">12</span><span class="fact-txt">launch-ready courses</span></div>
-        <div class="fact"><span class="fact-num" data-count-to="4">4</span><span class="fact-txt">schools of study</span></div>
-        <p class="facts-note">The world has changed.<br>Education must follow.</p>
-      </aside>
     </div>
   </div>
 </section>
