@@ -18,6 +18,7 @@ script overwrites the generated pages.
 
 import json
 import os
+import re
 import shutil
 from datetime import date
 
@@ -393,7 +394,18 @@ CREST = ('<span class="brand-mark"><img src="{root}assets/arsc-logo-128.jpg" alt
          'width="44" height="44" decoding="async"></span>')
 
 
-def head(root, title, desc, canon, extra=""):
+# Google truncates titles past ~60 characters and descriptions past ~160.
+# Anything outside those bounds is a real defect, not a style preference, so
+# the build fails loudly rather than shipping a truncated search result.
+def _check_meta(path, title, desc):
+    if not 30 <= len(title) <= 62:
+        raise SystemExit(f"TITLE {len(title)}ch (need 30-62) on {path}: {title}")
+    if not 110 <= len(desc) <= 160:
+        raise SystemExit(f"DESC {len(desc)}ch (need 110-160) on {path}: {desc}")
+
+
+def head(root, title, desc, canon, extra="", keywords=""):
+    kw = f'<meta name="keywords" content="{keywords}">\n' if keywords else ""
     return f"""<!doctype html>
 <html lang="en-CA">
 <head>
@@ -401,7 +413,11 @@ def head(root, title, desc, canon, extra=""):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<meta name="theme-color" content="#0B1B3F">
+{kw}<meta name="theme-color" content="#0B1B3F">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="author" content="ARSC Professional Development College">
+<meta name="geo.region" content="CA-BC">
+<meta name="geo.placename" content="British Columbia, Canada">
 
 <link rel="canonical" href="{SITE}{canon}">
 <link rel="icon" href="{root}assets/favicon-180.png" sizes="any">
@@ -417,6 +433,7 @@ def head(root, title, desc, canon, extra=""):
 <meta property="og:image:alt" content="Academy of Research and Sciences of Canada Inc. crest">
 <meta name="twitter:card" content="summary_large_image">
 
+<link rel="preload" as="image" href="{root}assets/arsc-logo-128.jpg" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
@@ -486,7 +503,7 @@ def footer(root):
 
     <div class="footer-top">
       <div>
-        <img class="footer-logo" src="{root}assets/arsc-logo-400.jpg" width="95" height="95"
+        <img class="footer-logo" src="{root}assets/arsc-logo-200.jpg" width="95" height="95"
              loading="lazy" decoding="async"
              alt="Crest of the Academy of Research and Sciences of Canada Inc. — Académie de Recherche et des Sciences du Canada Inc.">
         <p class="footer-blurb">
@@ -497,11 +514,11 @@ def footer(root):
 
       <div class="footer-cols">
         <div>
-          <h4>Schools</h4>
+          <h2>Schools</h2>
           <ul>{school_links}</ul>
         </div>
         <div>
-          <h4>Organization</h4>
+          <h2>Organization</h2>
           <ul>
             <li><a href="{root}college/">The College</a></li>
             <li><a href="{root}advisory/">Advisory Services</a></li>
@@ -514,7 +531,7 @@ def footer(root):
           </ul>
         </div>
         <div>
-          <h4>Contact</h4>
+          <h2>Contact</h2>
           <ul>
             <li><a href="mailto:{EMAIL}">{EMAIL}</a></li>
             <li><a href="{SITE}">arscollegecanada.ca</a></li>
@@ -526,7 +543,7 @@ def footer(root):
     </div>
 
     <div style="padding-bottom:var(--sp-2xl)">
-      <h4>Stay informed</h4>
+      <h2>Stay informed</h2>
       <p style="max-width:52ch;margin-bottom:var(--sp-md)">
         Occasional notes on Canadian tax changes, AI in practice, and new course
         intakes. No more than monthly.
@@ -561,6 +578,40 @@ def footer(root):
 </body>
 </html>
 """
+
+
+def course_title(c):
+    """<=62 chars. Hours and "Online" are what people actually search for."""
+    t = f"{c['title']} — {c['hours']}h Online Course | ARSC"
+    if len(t) > 62:
+        t = f"{c['title']} — {c['hours']}h Course | ARSC"
+    return t
+
+
+def course_desc(c):
+    """110-160 chars. Starts with the blurb, then pads with the facts a
+    searcher wants: hours, delivery, credential."""
+    tails = [
+        f" {c['hours']} instructional hours, online and self-paced, certificate on completion.",
+        f" {c['hours']} hours, online and self-paced, with a certificate of completion.",
+        f" {c['hours']} hours online, self-paced. Certificate of completion.",
+        f" {c['hours']} hours, online, self-paced.",
+        "",
+    ]
+    base = c["blurb"].rstrip()
+    for t in tails:
+        d = base + t
+        if 110 <= len(d) <= 160:
+            return d
+    d = (base + tails[0])[:157].rsplit(" ", 1)[0] + "."
+    return d
+
+
+def course_keywords(c):
+    school = c["school"].lower()
+    return (f"{c['title'].lower()}, online {school} course canada, "
+            f"{c['code'].lower()} arsc, professional development certificate bc, "
+            "self paced online course")
 
 
 def slugify(s):
@@ -605,6 +656,13 @@ def course_card(root, c, prefix="college/"):
 
 
 def write(path, content):
+    # Validate meta lengths on the finished HTML so every page is checked,
+    # including any added later.
+    m_t = re.search(r"<title>(.*?)</title>", content, re.S)
+    m_d = re.search(r'name="description" content="(.*?)"', content, re.S)
+    if m_t and m_d:
+        _check_meta(path, m_t.group(1).strip(), m_d.group(1).strip())
+
     full = os.path.join(HERE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, "w", encoding="utf-8") as f:
@@ -838,9 +896,12 @@ def page_home():
 </main>
 """
     return write("index.html",
-                 head(root, "ARSC Professional Development College — AI-Integrated Professional Education, British Columbia",
-                      "ARSC delivers practical, AI-integrated professional development in artificial intelligence, Canadian taxation, accounting, bookkeeping, business and human resources. Online and non-degree.",
-                      "/", ld)
+                 head(root, "ARSC Professional Development College | British Columbia",
+                      "Online professional development in AI, Canadian taxation, accounting, bookkeeping, payroll, business and HR. Non-degree certificates, British Columbia.",
+                      "/", ld,
+                      "professional development courses BC, online accounting course Canada, "
+                      "Canadian tax course online, bookkeeping course Vancouver, AI training for professionals, "
+                      "payroll course Canada, continuing education British Columbia")
                  + header(root, "") + body + footer(root))
 
 
@@ -853,7 +914,7 @@ def page_college():
             f'<li><a href="{c["slug"]}.html"><span>{c["title"]}</span><em>{c["hours"]} hrs</em></a></li>'
             for c in cs)
         blocks.append(f'<div class="school" id="school-{slugify(name)}" data-reveal>'
-                      f'<h4>{full}</h4><ul>{lis}</ul></div>')
+                      f'<h3>{full}</h3><ul>{lis}</ul></div>')
 
     # This page already lives in /college/, so course links are siblings:
     # no root prefix, no directory prefix.
@@ -884,6 +945,7 @@ def page_college():
 
 <section class="tight">
   <div class="shell">
+    <h2 class="visually-hidden">Schools and courses</h2>
     <div class="schools">{''.join(blocks)}</div>
   </div>
 </section>
@@ -936,9 +998,11 @@ def page_college():
 </main>
 """
     return write("college/index.html",
-                 head(root, "The College — 12 Online Professional Development Courses | ARSC",
-                      "Twelve online professional development courses across artificial intelligence, taxation and accounting, business and entrepreneurship, and human resources.",
-                      "/college/", ld)
+                 head(root, "Course Catalogue — 12 Online Courses | ARSC College",
+                      "Twelve online professional development courses in artificial intelligence, Canadian taxation and accounting, business, entrepreneurship and human resources.",
+                      "/college/", ld,
+                      "online bookkeeping course Canada, Canadian personal tax course, "
+                      "payroll administration course, small business accounting course, AI for accountants")
                  + header(root, "college/") + body + footer(root))
 
 
@@ -980,7 +1044,7 @@ def page_course(c):
             f'{" &middot; planned" if planned else ""}</span>'
             for name, planned in tools)
         tools_block = (
-            '<h3 style="margin-top:var(--sp-xl)" data-reveal="fade">Tools covered</h3>'
+            '<h2 style="margin-top:var(--sp-xl);font-size:clamp(1.5rem,1.3rem+0.8vw,1.9rem)" data-reveal="fade">Tools covered</h2>'
             f'<div class="tools" style="margin-top:var(--sp-md)" data-reveal="fade">{chips}</div>'
             '<p style="margin-top:12px;font-size:13.5px;opacity:.75">'
             'Items marked <em>planned</em> are scheduled for a future revision of this '
@@ -1015,9 +1079,9 @@ def page_course(c):
     rel = RELEVANCE.get(c["school"], [])
     relevance_block = ""
     if rel:
-        cells = "".join(f"<div><h4>{t}</h4><p>{b}</p></div>" for t, b in rel)
+        cells = "".join(f"<div><h3>{t}</h3><p>{b}</p></div>" for t, b in rel)
         relevance_block = (
-            '<h3 style="margin-top:var(--sp-xl)" data-reveal="fade">Context</h3>'
+            '<h2 style="margin-top:var(--sp-xl);font-size:clamp(1.5rem,1.3rem+0.8vw,1.9rem)" data-reveal="fade">Context</h2>'
             f'<div class="relevance" style="margin-top:var(--sp-md)" data-reveal="fade">{cells}</div>'
             '<p style="margin-top:14px;font-size:13.5px;opacity:.75">'
             'This describes where the subject matter is applied. It is not a '
@@ -1050,7 +1114,7 @@ def page_course(c):
         <h1 data-reveal style="--d:70ms">{c['title']}</h1>
         <p class="lede" data-reveal style="--d:150ms">{c['summary']}</p>
 
-        <h3 style="margin-top:var(--sp-xl)" data-reveal="fade">What you will be able to do</h3>
+        <h2 style="margin-top:var(--sp-xl);font-size:clamp(1.5rem,1.3rem+0.8vw,1.9rem)" data-reveal="fade">What you will be able to do</h2>
         <ul class="division" style="border:0;padding:var(--sp-md) 0 0;list-style:none;margin:0;display:grid;gap:9px" data-reveal="fade">
           {outcomes}
         </ul>
@@ -1148,8 +1212,8 @@ def page_course(c):
 </main>
 """
     return write(f"college/{c['slug']}.html",
-                 head(root, f"{c['title']} ({c['hours']} hours) | ARSC Professional Development College",
-                      c["blurb"], f"/college/{c['slug']}.html", ld)
+                 head(root, course_title(c), course_desc(c), f"/college/{c['slug']}.html", ld,
+                      course_keywords(c))
                  + header(root, "college/") + body + footer(root))
 
 
@@ -1218,6 +1282,7 @@ def page_advisory():
 
 <section class="tight">
   <div class="shell">
+    <h2 class="visually-hidden">Services offered</h2>
     <div class="divisions" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">{cards}</div>
 
     <div class="notice on-dark" data-reveal="fade">
@@ -1283,9 +1348,11 @@ def page_advisory():
 </main>
 """
     return write("advisory/index.html",
-                 head(root, "Accounting, Tax & Business Advisory | ARSC",
-                      "Bookkeeping, personal and business tax preparation, payroll, GST/HST, business registration, HR administration and AI workflow services for individuals and growing businesses.",
-                      "/advisory/", ld)
+                 head(root, "Accounting, Tax and Business Advisory | ARSC",
+                      "Bookkeeping, personal and business tax preparation, payroll, GST/HST, business registration and HR administration for growing Canadian businesses.",
+                      "/advisory/", ld,
+                      "bookkeeping services BC, personal tax preparation Canada, GST HST filing, "
+                      "payroll services British Columbia, business registration BC, CRA correspondence support")
                  + header(root, "advisory/") + body + footer(root))
 
 
@@ -1314,6 +1381,7 @@ def page_about():
 
 <section class="on-light tight">
   <div class="shell">
+    <h2 class="visually-hidden">Mission, vision and philosophy</h2>
     <div class="steps" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
       <div class="step" data-reveal><p class="step-no">Mission</p><div class="step-rule"></div>
         <h3>What we are here to do</h3>
@@ -1368,7 +1436,7 @@ def page_about():
         because the alternative misleads the people we are trying to help.
       </p>
 
-      <h4>What ARSC issues</h4>
+      <h3>What ARSC issues</h3>
       <ul>
         <li>Certificate of Completion</li>
         <li>Professional Development Certificate</li>
@@ -1377,7 +1445,7 @@ def page_about():
         <li>Certificate of Practical Training Completion</li>
       </ul>
 
-      <h4>What ARSC does not issue</h4>
+      <h3>What ARSC does not issue</h3>
       <ul>
         <li>Academic degrees</li>
         <li>Government-recognized diplomas</li>
@@ -1414,8 +1482,10 @@ def page_about():
 """
     return write("about/index.html",
                  head(root, "About ARSC — Mission, Vision and Regulatory Position",
-                      "ARSC's mission, vision, corporate structure, and an explicit statement of what our certificates are and are not.",
-                      "/about/", ld)
+                      "Our mission, vision and corporate structure, plus a plain statement of what ARSC certificates are and are not. Non-degree training in British Columbia.",
+                      "/about/", ld,
+                      "ARSC College, professional development college BC, "
+                      "non-degree certificate Canada, Academy of Research and Sciences of Canada")
                  + header(root, "about/") + body + footer(root))
 
 
@@ -1489,7 +1559,7 @@ def page_enroll():
       </form>
 
       <div data-reveal="right">
-        <h3>What happens next</h3>
+        <h2 style="font-size:clamp(1.4rem,1.2rem+0.7vw,1.8rem)">What happens next</h2>
         <ol class="prose" style="margin-top:var(--sp-md)">
           <li>An advisor reviews your request and replies within two business days.</li>
           <li>You get a short, honest conversation about fit &mdash; including being told if a cheaper or different option would serve you better.</li>
@@ -1554,9 +1624,11 @@ def page_enroll():
 </script>
 """
     return write("enroll/index.html",
-                 head(root, "Enrol in a Course | ARSC Professional Development College",
-                      "Request enrolment in an ARSC professional development course. An advisor confirms the next intake, the final price, and whether the course fits your goals.",
-                      "/enroll/", ld)
+                 head(root, "Enrol in a Course | ARSC College",
+                      "Request enrolment in an ARSC professional development course. An advisor confirms the next intake, the price and whether the course genuinely fits you.",
+                      "/enroll/", ld,
+                      "enrol online course Canada, professional development enrolment, "
+                      "accounting course registration BC")
                  + header(root, "enroll/") + body + footer(root))
 
 
@@ -1626,7 +1698,7 @@ def page_contact():
       </form>
 
       <div data-reveal="right">
-        <h3>Direct</h3>
+        <h2 style="font-size:clamp(1.4rem,1.2rem+0.7vw,1.8rem)">Direct</h2>
         <ul class="buy-specs" style="margin-top:var(--sp-md)">
           <li><span class="k">Email</span><span class="v"><a href="mailto:{EMAIL}" style="color:var(--gold-deep)">{EMAIL}</a></span></li>
           <li><span class="k">Website</span><span class="v">arscollegecanada.ca</span></li>
@@ -1675,9 +1747,10 @@ def page_contact():
 </script>
 """
     return write("contact/index.html",
-                 head(root, "Contact ARSC | Professional Development College and Advisory Services",
-                      "Contact ARSC about a course, accounting and tax services, employer training, the Professional Practice Program, or a privacy request.",
-                      "/contact/", ld)
+                 head(root, "Contact ARSC College and Advisory Services",
+                      "Contact ARSC about a course, accounting and tax services, employer training, the Professional Practice Program, or a privacy request. Based in BC, Canada.",
+                      "/contact/", ld,
+                      "contact ARSC, accounting services enquiry BC, course advisor Canada")
                  + header(root, "contact/") + body + footer(root))
 
 
@@ -1704,6 +1777,7 @@ def page_policies():
 
 <section class="on-light">
   <div class="shell">
+    <h2 class="visually-hidden">Policy summaries</h2>
     <div class="prose" data-reveal="fade">
 
       <div class="notice" style="margin-top:0">
@@ -1829,9 +1903,11 @@ def page_policies():
 </main>
 """
     return write("policies/index.html",
-                 head(root, "Policies — Enrolment, Refunds, Privacy and Accessibility | ARSC",
-                      "ARSC policies covering regulatory disclosure, enrolment agreements, refunds, complaint resolution, academic integrity, accessibility, privacy and student records.",
-                      "/policies/", ld)
+                 head(root, "Policies — Enrolment, Refunds and Privacy | ARSC",
+                      "Regulatory disclosure, enrolment agreements, refunds, complaint resolution, academic integrity, accessibility, privacy and student records at ARSC College.",
+                      "/policies/", ld,
+                      "refund policy online course, PIPA privacy BC, enrolment agreement, "
+                      "student records retention Canada")
                  + header(root, "") + body + footer(root))
 
 
@@ -1884,6 +1960,7 @@ def page_faculty():
       faculty roster.
     </div>
 
+    <h2 class="visually-hidden">Faculty positions</h2>
     <div class="people" style="margin-top:var(--sp-xl)">{slots}</div>
   </div>
 </section>
@@ -1931,9 +2008,11 @@ def page_faculty():
 </main>
 """
     return write("faculty/index.html",
-                 head(root, "Faculty and Instructor Standards | ARSC",
-                      "ARSC recruits instructors who maintain active professional practice. Faculty appointments, instructor qualification standards and the annual course review cycle.",
-                      "/faculty/", ld)
+                 head(root, "Faculty and Instructor Standards | ARSC College",
+                      "ARSC instructors maintain active professional practice. Faculty appointments, qualification standards and the annual course review cycle, explained plainly.",
+                      "/faculty/", ld,
+                      "accounting instructor Canada, tax instructor BC, teach professional development, "
+                      "instructor qualifications, practising professional educator")
                  + header(root, "faculty/") + body + footer(root))
 
 
@@ -2014,10 +2093,10 @@ def page_how():
     </div>
 
     <div class="relevance" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))" data-reveal="fade">
-      <div><h4>Device</h4><p>Any laptop or desktop from the last several years. A tablet works for watching, but spreadsheet exercises need a real keyboard.</p></div>
-      <div><h4>Connection</h4><p>A standard home broadband connection. Video quality adjusts automatically to what your connection can carry.</p></div>
-      <div><h4>Software</h4><p>A spreadsheet application for the accounting and finance courses. Requirements are listed on each course page.</p></div>
-      <div><h4>Time</h4><p>Instructional hours are listed per course. Most students spread a 24-hour course across six to eight weeks.</p></div>
+      <div><h3>Device</h3><p>Any laptop or desktop from the last several years. A tablet works for watching, but spreadsheet exercises need a real keyboard.</p></div>
+      <div><h3>Connection</h3><p>A standard home broadband connection. Video quality adjusts automatically to what your connection can carry.</p></div>
+      <div><h3>Software</h3><p>A spreadsheet application for the accounting and finance courses. Requirements are listed on each course page.</p></div>
+      <div><h3>Time</h3><p>Instructional hours are listed per course. Most students spread a 24-hour course across six to eight weeks.</p></div>
     </div>
 
     <div class="notice on-dark" data-reveal="fade">
@@ -2043,9 +2122,11 @@ def page_how():
 </main>
 """
     return write("how-it-works/index.html",
-                 head(root, "How Online Learning Works at ARSC",
-                      "Delivery format, technology requirements, student support, accessibility and what to expect from an ARSC online professional development course.",
-                      "/how-it-works/", ld)
+                 head(root, "How Online Learning Works | ARSC College",
+                      "Delivery format, technology requirements, student support and accessibility. What to expect from a self-paced ARSC online professional development course today.",
+                      "/how-it-works/", ld,
+                      "self paced online course Canada, asynchronous learning, "
+                      "online course requirements, accessible online learning")
                  + header(root, "") + body + footer(root))
 
 
@@ -2070,6 +2151,7 @@ def page_employers():
 
 <section class="tight">
   <div class="shell">
+    <h2 class="visually-hidden">Training options</h2>
     <div class="divisions" style="grid-template-columns:repeat(auto-fit,minmax(290px,1fr))">
       <article class="division" data-reveal>
         <span class="division-tag">Group seats</span>
@@ -2112,10 +2194,10 @@ def page_employers():
       </div>
     </div>
     <div class="relevance" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))" data-reveal="fade">
-      <div><h4>How many people</h4><p>Headcount, and whether they are all at the same level.</p></div>
-      <div><h4>Which subject</h4><p>A published course, or the capability gap you are trying to close.</p></div>
-      <div><h4>When</h4><p>Your target window, and any period to avoid &mdash; tax season, month end, year end.</p></div>
-      <div><h4>Format</h4><p>Self-paced seats, or a private cohort with scheduled sessions.</p></div>
+      <div><h3>How many people</h3><p>Headcount, and whether they are all at the same level.</p></div>
+      <div><h3>Which subject</h3><p>A published course, or the capability gap you are trying to close.</p></div>
+      <div><h3>When</h3><p>Your target window, and any period to avoid &mdash; tax season, month end, year end.</p></div>
+      <div><h3>Format</h3><p>Self-paced seats, or a private cohort with scheduled sessions.</p></div>
     </div>
   </div>
 </section>
@@ -2132,9 +2214,11 @@ def page_employers():
 </main>
 """
     return write("employers/index.html",
-                 head(root, "Employer and Group Training | ARSC",
-                      "Group seats, private cohorts and workshops for firms training several staff in accounting, taxation, payroll, HR or AI capability.",
-                      "/employers/", ld)
+                 head(root, "Employer and Group Training | ARSC College",
+                      "Group seats, private cohorts and workshops for firms training staff in accounting, taxation, payroll, HR or AI. Scheduled around your busy season.",
+                      "/employers/", ld,
+                      "corporate training Canada, group training accounting, staff upskilling BC, "
+                      "employer training program, private cohort training")
                  + header(root, "") + body + footer(root))
 
 
@@ -2191,6 +2275,7 @@ def page_resources():
       published &mdash; nothing below is live yet, and none of it is presented as
       if it were.
     </div>
+    <h2 class="visually-hidden">Articles in preparation</h2>
     <div class="posts" style="margin-top:var(--sp-xl)">{posts}</div>
   </div>
 </section>
@@ -2210,9 +2295,11 @@ def page_resources():
 </main>
 """
     return write("resources/index.html",
-                 head(root, "Resources — Canadian Tax, Bookkeeping, Payroll and AI Notes | ARSC",
-                      "Practical, plain-language notes on Canadian taxation, bookkeeping, payroll and the responsible use of AI in professional practice.",
-                      "/resources/", ld)
+                 head(root, "Resources — Canadian Tax and Bookkeeping Notes | ARSC",
+                      "Plain-language notes on Canadian taxation, bookkeeping, payroll and the responsible use of AI in professional practice. Free to read, no enrolment needed.",
+                      "/resources/", ld,
+                      "Canadian tax guide, bookkeeping tips Canada, payroll calendar Canada, "
+                      "AI in accounting, starting a business in BC")
                  + header(root, "resources/") + body + footer(root))
 
 
@@ -2238,8 +2325,8 @@ def page_404():
 </main>
 """
     return write("404.html",
-                 head(root, "Page Not Found | ARSC Professional Development College",
-                      "The page you requested could not be found. Browse the ARSC course catalogue instead.",
+                 head(root, "Page Not Found | ARSC Professional Development",
+                      "The page you requested could not be found. Browse the ARSC catalogue of twelve online professional development courses in accounting, tax, business and AI.",
                       "/404.html", "")
                  + header(root, "") + body + footer(root))
 
