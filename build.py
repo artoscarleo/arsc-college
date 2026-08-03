@@ -828,7 +828,7 @@ def page_home():
   <div class="shell">
     <div class="head">
       <div>
-        <p class="marker" data-reveal="fade">01 / Mission</p>
+        <p class="marker" data-reveal="fade">Mission</p>
         <h2 data-reveal style="--d:70ms">We don&rsquo;t teach the past.<br><span class="em">We build the future.</span></h2>
       </div>
       <p class="lede" data-reveal style="--d:150ms">
@@ -857,7 +857,7 @@ def page_home():
   <div class="shell">
     <div class="head">
       <div>
-        <p class="marker" data-reveal="fade">02 / Programs</p>
+        <p class="marker" data-reveal="fade">Programs</p>
         <h2 data-reveal style="--d:70ms">Skills for the<br><span class="em">world ahead.</span></h2>
       </div>
       <p class="lede" data-reveal style="--d:150ms">
@@ -880,7 +880,7 @@ def page_home():
   <div class="shell">
     <div class="head">
       <div>
-        <p class="marker" data-reveal="fade">03 / One organization, two divisions</p>
+        <p class="marker" data-reveal="fade">One organization, two divisions</p>
         <h2 data-reveal style="--d:70ms">From education<br><span class="em">to innovation.</span></h2>
       </div>
       <p class="lede" data-reveal style="--d:150ms">
@@ -1070,9 +1070,9 @@ def page_course(c):
             f'{" &middot; planned" if planned else ""}</span>'
             for name, planned in tools)
         tools_block = (
-            '<h2 style="margin-top:var(--sp-xl);font-size:clamp(1.5rem,1.3rem+0.8vw,1.9rem)" data-reveal="fade">Tools covered</h2>'
+            '<h2 class="h-sub" style="margin-top:var(--sp-xl)" data-reveal="fade">Tools covered</h2>'
             f'<div class="tools" style="margin-top:var(--sp-md)" data-reveal="fade">{chips}</div>'
-            '<p style="margin-top:12px;font-size:13.5px;opacity:.75">'
+            '<p class="footnote">'
             'Items marked <em>planned</em> are scheduled for a future revision of this '
             'course and are not part of the current syllabus.</p>')
 
@@ -1107,9 +1107,9 @@ def page_course(c):
     if rel:
         cells = "".join(f"<div><h3>{t}</h3><p>{b}</p></div>" for t, b in rel)
         relevance_block = (
-            '<h2 style="margin-top:var(--sp-xl);font-size:clamp(1.5rem,1.3rem+0.8vw,1.9rem)" data-reveal="fade">Context</h2>'
+            '<h2 class="h-sub" style="margin-top:var(--sp-xl)" data-reveal="fade">Context</h2>'
             f'<div class="relevance" style="margin-top:var(--sp-md)" data-reveal="fade">{cells}</div>'
-            '<p style="margin-top:14px;font-size:13.5px;opacity:.75">'
+            '<p class="footnote">'
             'This describes where the subject matter is applied. It is not a '
             'statement about employment outcomes, and ARSC does not guarantee '
             'employment or provide job placement.</p>')
@@ -1140,7 +1140,7 @@ def page_course(c):
         <h1 data-reveal style="--d:70ms">{c['title']}</h1>
         <p class="lede" data-reveal style="--d:150ms">{c['summary']}</p>
 
-        <h2 style="margin-top:var(--sp-xl);font-size:clamp(1.5rem,1.3rem+0.8vw,1.9rem)" data-reveal="fade">What you will be able to do</h2>
+        <h2 class="h-sub" style="margin-top:var(--sp-xl)" data-reveal="fade">What you will be able to do</h2>
         <ul class="division" style="border:0;padding:var(--sp-md) 0 0;list-style:none;margin:0;display:grid;gap:9px" data-reveal="fade">
           {outcomes}
         </ul>
@@ -1585,7 +1585,7 @@ def page_enroll():
       </form>
 
       <div data-reveal="right">
-        <h2 style="font-size:clamp(1.4rem,1.2rem+0.7vw,1.8rem)">What happens next</h2>
+        <h2 class="h-side">What happens next</h2>
         <ol class="prose" style="margin-top:var(--sp-md)">
           <li>An advisor reviews your request and replies within two business days.</li>
           <li>You get a short, honest conversation about fit &mdash; including being told if a cheaper or different option would serve you better.</li>
@@ -1724,7 +1724,7 @@ def page_contact():
       </form>
 
       <div data-reveal="right">
-        <h2 style="font-size:clamp(1.4rem,1.2rem+0.7vw,1.8rem)">Direct</h2>
+        <h2 class="h-side">Direct</h2>
         <ul class="buy-specs" style="margin-top:var(--sp-md)">
           <li><span class="k">Email</span><span class="v"><a href="mailto:{EMAIL}" style="color:var(--gold-deep)">{EMAIL}</a></span></li>
           <li><span class="k">Website</span><span class="v">arscollegecanada.ca</span></li>
@@ -2274,7 +2274,7 @@ def page_resources():
         <p class="kicker">{kicker}</p>
         <h3>{title}</h3>
         <p>{blurb}</p>
-        <p style="margin-top:var(--sp-md);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.6">In preparation</p>
+        <p class="post-status">In preparation</p>
       </article>''' for i, (kicker, title, blurb) in enumerate(planned))
 
     body = f"""
