@@ -16,6 +16,7 @@ edit directly if you prefer. If you do hand-edit, note that re-running this
 script overwrites the generated pages.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -437,7 +438,7 @@ def head(root, title, desc, canon, extra="", keywords=""):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{root}assets/site.css">
+<link rel="stylesheet" href="{root}assets/site.css?v={CSS_V}">
 {extra}</head>
 <body>
 
@@ -574,7 +575,7 @@ def footer(root):
   </div>
 </footer>
 
-<script src="{root}assets/site.js" defer></script>
+<script src="{root}assets/site.js?v={JS_V}" defer></script>
 </body>
 </html>
 """
@@ -612,6 +613,25 @@ def course_keywords(c):
     return (f"{c['title'].lower()}, online {school} course canada, "
             f"{c['code'].lower()} arsc, professional development certificate bc, "
             "self paced online course")
+
+
+# Cache busting. The host serves assets with max-age=31536000 (one year), so a
+# returning visitor keeps the old stylesheet long after a deploy — which is
+# exactly what "I can't see the update" looks like. Appending a hash of the
+# file's own contents means a changed file is a changed URL, so the browser
+# is obliged to fetch it, while an unchanged file still caches for the full
+# year. Best of both.
+def asset_v(relpath):
+    full = os.path.join(HERE, relpath)
+    try:
+        with open(full, "rb") as f:
+            return hashlib.sha1(f.read()).hexdigest()[:8]
+    except FileNotFoundError:
+        return "0"
+
+
+CSS_V = None   # filled in by main() once the CSS is final
+JS_V = None
 
 
 def slugify(s):
@@ -2366,6 +2386,10 @@ def page_sitemap(paths):
 
 
 def main():
+    global CSS_V, JS_V
+    CSS_V = asset_v("assets/site.css")
+    JS_V = asset_v("assets/site.js")
+
     built = []
 
     # Remove the previous single-page build so nothing stale is served.
@@ -2396,6 +2420,7 @@ def main():
         f.write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n")
 
     print(f"built {len(built)} pages + sitemap.xml + robots.txt")
+    print(f"asset versions: site.css?v={CSS_V}  site.js?v={JS_V}")
     for p in built:
         print("  " + p)
     total = sum(len(c["lessons"]) for c in COURSES)
