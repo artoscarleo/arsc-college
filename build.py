@@ -808,7 +808,6 @@ def page_home():
           adapt, lead and transform.
         </p>
         <div class="hero-actions" data-reveal style="--d:230ms">
-          <a class="btn btn-gold" href="college/">Explore programs {ARROW}</a>
           <a class="link-rule" href="about/">Discover our mission {ARROW_DOWN}</a>
         </div>
       </div>
