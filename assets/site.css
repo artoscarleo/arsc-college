@@ -116,8 +116,6 @@ section.tight { padding-block: var(--sp-xl); }
 .on-light { background: var(--cream); color: var(--ink-soft); }
 .on-light h1, .on-light h2, .on-light h3, .on-light h4 { color: var(--navy); }
 
-.topline { height: 2px; background: var(--gold); }
-
 /* ------------------------------------------------------------ typography -- */
 
 h1 { font-size: clamp(2.75rem, 1.6rem + 5.2vw, 6.2rem); }

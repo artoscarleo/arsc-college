@@ -443,7 +443,6 @@ def head(root, title, desc, canon, extra="", keywords=""):
 <body>
 
 <a class="skip" href="#main">Skip to main content</a>
-<div class="topline"></div>
 """
 
 
