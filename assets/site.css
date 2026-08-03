@@ -857,16 +857,21 @@ td strong { color: var(--navy); }
    ========================================================================= */
 
 @media (max-width: 560px) {
-  .nav { padding-block: 20px; }
-  .site-header.is-condensed .nav { padding-block: 14px; }
+  /* Phone header scaled up to match the desktop bar's presence. Width is
+     the binding constraint here, not height: the brand and the Menu button
+     have to share 327px at 375px wide, so the wordmark's tracking is eased
+     to buy back the space the bigger crest costs. */
+  .nav { padding-block: 30px; }
+  .site-header.is-condensed .nav { padding-block: 18px; }
 
-  .brand { gap: 11px; min-height: 44px; }
-  .brand-mark { width: 44px; height: 44px; }
-  .brand-text { font-size: 1.08rem; letter-spacing: 0.2em; }
-  .brand-text span { font-size: 10.5px; letter-spacing: 0.02em; }
+  .brand { gap: 12px; min-height: 54px; }
+  .brand-mark { width: 54px; height: 54px; }
+  .brand-text { font-size: 1.22rem; letter-spacing: 0.15em; }
+  .brand-text span { font-size: 11.5px; letter-spacing: 0.02em; margin-top: 4px; }
 
-  .nav-toggle { font-size: 11px; letter-spacing: 0.14em; gap: 8px; }
-  .nav-toggle-bars { width: 20px; }
+  .nav-toggle { font-size: 11.5px; letter-spacing: 0.12em; gap: 9px; }
+  .nav-toggle-bars { width: 22px; }
+  .nav-drawer a { min-height: 58px; font-size: 12.5px; }
 
   /* Sections tighten so a phone isn't scrolling through empty bands. */
   section { padding-block: var(--sp-xl); }
@@ -898,6 +903,28 @@ td strong { color: var(--navy); }
 
   .split { min-height: 92px; grid-template-columns: 1fr 44px 1fr; }
   .split div { font-size: 10px; letter-spacing: 0.14em; }
+}
+
+/* At 400px and below the brand plus the Menu button no longer share the
+   row comfortably: measured, 375px overflows by 5px at full size. The
+   wordmark gives way rather than the crest — the crest is the identity and
+   the thing that should stay legible; the lettering beside it is supporting
+   text and survives being a little smaller. */
+@media (max-width: 400px) {
+  .shell { padding-inline: 18px; }
+  .brand { gap: 10px; }
+  .brand-text { font-size: 1.02rem; letter-spacing: 0.1em; }
+  .brand-text span { font-size: 10.5px; letter-spacing: 0.01em; }
+  .nav-toggle { font-size: 10.5px; gap: 7px; }
+  .nav-toggle-bars { width: 20px; }
+}
+
+/* Smallest phones still in use (320px). Here the crest does have to shrink. */
+@media (max-width: 340px) {
+  .brand-mark { width: 46px; height: 46px; }
+  .brand { min-height: 46px; }
+  .brand-text { font-size: 0.95rem; }
+  .brand-text span { display: none; }
 }
 
 /* Tablets: two-up grids stay readable, but padding needn't be desktop-sized. */
