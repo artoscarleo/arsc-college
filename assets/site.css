@@ -380,7 +380,7 @@ h4 { font-size: 1.1rem; }
 }
 .hero h1 { margin-bottom: var(--sp-lg); }
 .hero .lede { margin-bottom: var(--sp-xl); }
-.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-md) var(--sp-lg); }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-md) var(--sp-xl); }
 
 /* Compact hero for interior pages. */
 .page-hero { position: relative; overflow: hidden; padding-block: var(--sp-xl) var(--sp-lg); }
@@ -892,9 +892,10 @@ td strong { color: var(--navy); }
   .notice { padding-left: var(--sp-sm); }
 
   /* Full-width buttons: side-by-side CTAs wrap awkwardly on a phone. */
-  .hero-actions { flex-direction: column; align-items: stretch; gap: 12px; }
+  /* Two matching text links now, not a button plus a link — they can share
+     a row on a phone instead of stacking into two full-width blocks. */
+  .hero-actions { gap: var(--sp-md) var(--sp-lg); }
   .hero-actions .btn { width: 100%; }
-  .hero-actions .link-rule { justify-content: center; }
 
   /* Long course titles must not force a horizontal scroll. */
   h1, h2, h3 { overflow-wrap: break-word; }
