@@ -996,6 +996,12 @@ img, svg, video, iframe { max-width: 100%; }
 
 /* ------------------------------------------------------------- newsletter -- */
 
+/* The newsletter form is the one form on a dark ground. Its label inherits
+   .field label's gold-deep, which is meant for cream sections and lands at
+   3.33:1 on navy — below AA. Light gold on navy-deep is 9.6:1. */
+.site-footer .field label { color: var(--gold); }
+.site-footer .field .hint { color: var(--dim); }
+
 .signup { display: grid; gap: 12px; max-width: 460px; }
 @media (min-width: 560px) { .signup { grid-template-columns: 1fr auto; align-items: end; } }
 .signup .field { margin: 0; }
